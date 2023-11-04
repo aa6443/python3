@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>My Map</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+	<style>
+		#map {
+			height: 400px;
+			width: 100%;
+		}
+	</style>
+</head>
+<body>
+	<h1>My Map</h1>
+	<div id="map"></div>
+	<label for="start">Start Point:</label>
+	<input type="text" id="start" placeholder="Enter starting point">
+	<label for="end">End Point:</label>
+	<input type="text" id="end" placeholder="Enter ending point">
+	<button onclick="getRoute()">Get Route</button>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.min.js"></script>
+	<script>
+		var map = L.map('map').setView([51.505, -0.09], 13);
+
+		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>',
+			maxZoom: 18
+		}).addTo(map);
+
+		var startMarker = L.marker([0, 0]);
+		var endMarker = L.marker([0, 0]);
+		var routeControl = L.Routing.control({
+			waypoints: [
+				L.latLng(0, 0),
+				L.latLng(0, 0)
+			],
+			routeWhileDragging: true
+		});
+		routeControl.addTo(map);
+
+		function getRoute() {
+			var start = document.getElementById("start").value;
+			var end = document.getElementById("end").value;
+
+			if (start == "" || end == "") {
+				alert("Please enter both start and end points.");
+				return;
+			}
+
+			var routingServer = L.Routing.osrmv1({
+				// Specify the URL to the OSRM API
+				serviceUrl: 'http://router.project-osrm.org/route/v1'
+			});
+
+			routingServer.route([
+				{ query: start },
+				{ query: end }
+			], function(error, result) {
+				if (error) {
+					alert("Could not find route.");
+					return;
+				}
+				routeControl.setWaypoints([
+					result.waypoints[0].location,
+					result.waypoints[result.waypoints.length - 1].location
+				]);
+				map.fitBounds(result.routeSummary.bounds);
+				startMarker.setLatLng(result.waypoints[0].location).addTo(map);
+				endMarker.setLatLng(result.waypoints[result.waypoints.length - 1].location).addTo(map);
+			});
+		}
+	</script>
+</body>
+</html>
